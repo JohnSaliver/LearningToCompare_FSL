@@ -25,7 +25,7 @@ class Rotate(object):
         return x
 
 def omniglot_character_folders():
-    data_folder = '../datas/omniglot_resized/'
+    data_folder = '.\\datas\\omniglot_resized\\'
 
     character_folders = [os.path.join(data_folder, family, character) \
                 for family in os.listdir(data_folder) \
@@ -68,11 +68,15 @@ class OmniglotTask(object):
             self.train_roots += samples[c][:train_num]
             self.test_roots += samples[c][train_num:train_num+test_num]
 
+        #print("\n\n", [self.get_class(x) for x in self.train_roots])
+        #print(labels.keys())
         self.train_labels = [labels[self.get_class(x)] for x in self.train_roots]
         self.test_labels = [labels[self.get_class(x)] for x in self.test_roots]
 
     def get_class(self, sample):
-        return os.path.join(*sample.split('/')[:-1])
+        #print(os.path.join(*os.path.join(*sample.split('\\')[:-1]).split('/')))
+        return os.path.join(*sample.split('\\')[:-1])
+        #return os.path.join(*sample.split('/')[:-1])
 
 
 class FewShotDataset(Dataset):
@@ -104,7 +108,8 @@ class Omniglot(FewShotDataset):
         image = image.resize((28,28), resample=Image.LANCZOS) # per Chelsea's implementation
         #image = np.array(image, dtype=np.float32)
         if self.transform is not None:
-            image = self.transform(image)
+            image = torch.tensor(np.asarray(image, dtype=np.float32)).reshape((1, 28,28))
+            #image = self.transform(image)
         label = self.labels[idx]
         if self.target_transform is not None:
             label = self.target_transform(label)

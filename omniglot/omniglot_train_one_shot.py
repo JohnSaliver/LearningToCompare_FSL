@@ -167,10 +167,10 @@ def main():
         # sample datas
         samples,sample_labels = sample_dataloader.__iter__().next()
         batches,batch_labels = batch_dataloader.__iter__().next()
-
+        
         # calculate features
-        sample_features = feature_encoder(Variable(samples).cuda(GPU)) # 5x64*5*5
-        batch_features = feature_encoder(Variable(batches).cuda(GPU)) # 20x64*5*5
+        sample_features = feature_encoder(Variable(samples).cuda(GPU).float()) # 5x64*5*5
+        batch_features = feature_encoder(Variable(batches).cuda(GPU).float()) # 20x64*5*5
 
         # calculate relations
         # each batch sample link to every samples to calculate relations
@@ -180,11 +180,11 @@ def main():
         batch_features_ext = torch.transpose(batch_features_ext,0,1)
 
         relation_pairs = torch.cat((sample_features_ext,batch_features_ext),2).view(-1,FEATURE_DIM*2,5,5)
-        relations = relation_network(relation_pairs).view(-1,CLASS_NUM)
+        relations = relation_network(relation_pairs.float()).view(-1,CLASS_NUM)
 
         mse = nn.MSELoss().cuda(GPU)
-        one_hot_labels = Variable(torch.zeros(BATCH_NUM_PER_CLASS*CLASS_NUM, CLASS_NUM).scatter_(1, batch_labels.view(-1,1), 1)).cuda(GPU)
-        loss = mse(relations,one_hot_labels)
+        one_hot_labels = Variable(torch.zeros(BATCH_NUM_PER_CLASS*CLASS_NUM, CLASS_NUM, dtype=torch.int64).scatter_(1, batch_labels.view(-1,1).type(torch.int64), 1)).cuda(GPU)
+        loss = mse(relations,one_hot_labels.float())
 
 
         # training
@@ -201,7 +201,7 @@ def main():
         relation_network_optim.step()
 
         if (episode+1)%100 == 0:
-                print("episode:",episode+1,"loss",loss.data[0])
+                print("episode:",episode+1,"loss",loss.item())
 
         if (episode+1)%5000 == 0:
 
